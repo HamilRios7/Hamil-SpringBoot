@@ -1,0 +1,11 @@
+$kind: http-request
+name: http://localhost:8080/api/libros
+description: ""
+url: http://localhost:8080/api/libros
+method: GET
+auth:
+  type: basic
+  credentials:
+    username: admin
+    password: "1234"
+order: 1875
