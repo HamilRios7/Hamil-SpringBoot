@@ -1,6 +1,6 @@
 package com.practicaCompleta.HamilPracticaAprendizaje.Repository;
 
-import com.practicaCompleta.HamilPracticaAprendizaje.Model.Book;
+import com.practicaCompleta.HamilPracticaAprendizaje.Repository.Entity.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

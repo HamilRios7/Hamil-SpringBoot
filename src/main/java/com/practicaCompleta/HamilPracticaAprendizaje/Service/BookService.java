@@ -1,9 +1,14 @@
 package com.practicaCompleta.HamilPracticaAprendizaje.Service;
 
 
-import com.practicaCompleta.HamilPracticaAprendizaje.Model.Book;
+import com.practicaCompleta.HamilPracticaAprendizaje.ExceptionHandler.NotFoundException;
+import com.practicaCompleta.HamilPracticaAprendizaje.Mapper.BookMapper;
+import com.practicaCompleta.HamilPracticaAprendizaje.Model.BookDto;
+import com.practicaCompleta.HamilPracticaAprendizaje.Model.CreateBookDto;
+import com.practicaCompleta.HamilPracticaAprendizaje.Repository.Entity.Book;
 import com.practicaCompleta.HamilPracticaAprendizaje.Repository.BookRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.mapstruct.Mapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,7 +25,7 @@ import java.util.Optional;
 
 
 @Service //warns that this class is a service component , this makes Spring control the cycle of life
-
+@RequiredArgsConstructor
 public class BookService {
 
 
@@ -28,9 +33,9 @@ public class BookService {
      * Spring inyecta la clase de BookRepository usando @Autowired a esta clase para no tener que
      * hacer new BookRepository()
      */
-    @Autowired
-    private BookRepository bookRepository;
 
+    private final BookRepository bookRepository;
+    private final BookMapper bookMapper;
 
     /**
      * Llama al método nativo findAll() de JPA para traer
@@ -38,8 +43,9 @@ public class BookService {
      * @return
      */
     // List all the books
-    public List<Book> findAll() {
-        return bookRepository.findAll();
+    public List<BookDto> findAll() {
+
+        return bookMapper.bookdtoToBookDto(bookRepository.findAll());
     }
 
 
@@ -47,14 +53,13 @@ public class BookService {
      * Recibe un objeto libro y utiliza el método save() de JPA. Si el libro no tiene ID,
      * lo crea (INSERT); si ya tiene ID, lo actualiza (UPDATE) en la base de datos de Oracle.
      *
-     * @param book
+     * @param createBookDto
      * @return
      */
     //Save the book
-    public Book save(Book book) {
-
-        return bookRepository.save(book);
-
+    public BookDto save(CreateBookDto createBookDto) {
+        Book book=bookMapper.createBookDtoToBook(createBookDto);
+        return  bookMapper.booktoBookDto( bookRepository.save(book));
     }
 
 
@@ -66,36 +71,47 @@ public class BookService {
      * @return
      */
     //Find a book by id
-    public Optional<Book> findById(Long id) {
-        return bookRepository.findById(id);
+    public BookDto findById(Long id) throws NotFoundException {
+
+        Optional<Book> bookOptional = bookRepository.findById(id);
+        if (bookOptional.isPresent()) {
+            Book book = bookOptional.get();
+            BookDto bookDto = bookMapper.booktoBookDto(book);
+            return bookDto;
+        } else {
+            throw new NotFoundException("Not found");
+        }
     }
 
 
     /**
      * Borra de la base de datos el registro que
      * coincida con ese ID utilizando el método deleteById() de JPA.
-     * @param book
+     * @param id
      */
     //Delete a book
-    public void delete(Book book) {
-        bookRepository.delete(book);
+    public void deleteById(Long id) {
+
+        bookRepository.deleteById(id);
     }
 
     /**
      * Actualiza un libro existente en la base de datos.
      *
      * @param id
-     * @param libroActualizado
+     * @param createBookdtoActualizado
      * @return
      */
     // Lógica para actualizar: busca el libro, cambia sus datos y los guarda
-    public Book update(Long id, Book libroActualizado) {
+    public BookDto update(Long id, CreateBookDto createBookdtoActualizado) {
+        Book bookActualizado=bookMapper.createBookDtoToBook(createBookdtoActualizado);
         return bookRepository.findById(id).map(libro -> {
-            libro.setTitulo(libroActualizado.getTitulo());
-            libro.setAutor(libroActualizado.getAutor());
-            libro.setPrecio(libroActualizado.getPrecio());
-            libro.setStock(libroActualizado.getStock());
-            return bookRepository.save(libro);
+            libro.setTitulo(bookActualizado.getTitulo());
+            libro.setAutor(bookActualizado.getAutor());
+            libro.setPrecio(bookActualizado.getPrecio());
+            libro.setStock(bookActualizado.getStock());
+            bookRepository.save(libro);
+            return bookMapper.booktoBookDto(libro);
         }).orElseThrow(() -> new RuntimeException("Libro no encontrado con ID: " + id));
     }
 }
